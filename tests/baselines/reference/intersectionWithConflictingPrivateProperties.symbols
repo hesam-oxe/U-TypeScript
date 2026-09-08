@@ -1,0 +1,202 @@
+//// [tests/cases/conformance/types/intersection/intersectionWithConflictingPrivateProperties.ts] ////
+
+=== intersectionWithConflictingPrivateProperties.ts ===
+// An intersection of types that declare same-named private properties originating from
+// different classes is reduced to `never`. Indexed accesses for such a property must
+// report an error instead of silently resolving to `never` (see #62294).
+
+class A {
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+
+    private a = { foo: 1 };
+>a : Symbol(A.a, Decl(intersectionWithConflictingPrivateProperties.ts, 4, 9))
+>foo : Symbol(foo, Decl(intersectionWithConflictingPrivateProperties.ts, 5, 17))
+}
+
+class B {
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+
+    private a = { bar: "bar" };
+>a : Symbol(B.a, Decl(intersectionWithConflictingPrivateProperties.ts, 8, 9))
+>bar : Symbol(bar, Decl(intersectionWithConflictingPrivateProperties.ts, 9, 17))
+}
+
+// Direct non-generic intersection
+type T1 = (A & B)["a"]; // Error
+>T1 : Symbol(T1, Decl(intersectionWithConflictingPrivateProperties.ts, 10, 1))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+
+type T2 = (A & B)["missing"]; // Ok, indexing `never` is permissive
+>T2 : Symbol(T2, Decl(intersectionWithConflictingPrivateProperties.ts, 13, 23))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+
+// Generic intersection
+type T3<T extends A, U extends B> = (T & U)["a"]; // Error
+>T3 : Symbol(T3, Decl(intersectionWithConflictingPrivateProperties.ts, 14, 29))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 17, 8))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 17, 20))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 17, 8))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 17, 20))
+
+// Type parameter constrained by an intersection
+type T4<T extends A & B> = T["a"]; // Error
+>T4 : Symbol(T4, Decl(intersectionWithConflictingPrivateProperties.ts, 17, 49))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 20, 8))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 20, 8))
+
+type T5<T extends A & B> = T["a"]["b"]["c"]["d"]; // Error
+>T5 : Symbol(T5, Decl(intersectionWithConflictingPrivateProperties.ts, 20, 34))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 21, 8))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 21, 8))
+
+// Accessed through an alias
+type AB = A & B;
+>AB : Symbol(AB, Decl(intersectionWithConflictingPrivateProperties.ts, 21, 49))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+
+type T6 = AB["a"]; // Error
+>T6 : Symbol(T6, Decl(intersectionWithConflictingPrivateProperties.ts, 24, 16))
+>AB : Symbol(AB, Decl(intersectionWithConflictingPrivateProperties.ts, 21, 49))
+
+// Nested in a conditional type
+type T7<T extends A, U extends B> = T extends never ? never : (T & U)["a"]; // Error
+>T7 : Symbol(T7, Decl(intersectionWithConflictingPrivateProperties.ts, 25, 18))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 28, 8))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 28, 20))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 28, 8))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 28, 8))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 28, 20))
+
+// Element access in expression position
+function f1<T extends A, U extends B>(x: T & U) {
+>f1 : Symbol(f1, Decl(intersectionWithConflictingPrivateProperties.ts, 28, 75))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 31, 12))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 31, 24))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+>x : Symbol(x, Decl(intersectionWithConflictingPrivateProperties.ts, 31, 38))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 31, 12))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 31, 24))
+
+    const v1 = x["a"]; // Error
+>v1 : Symbol(v1, Decl(intersectionWithConflictingPrivateProperties.ts, 32, 9))
+>x : Symbol(x, Decl(intersectionWithConflictingPrivateProperties.ts, 31, 38))
+
+    x["a"] = { foo: 1 }; // Error
+>x : Symbol(x, Decl(intersectionWithConflictingPrivateProperties.ts, 31, 38))
+>foo : Symbol(foo, Decl(intersectionWithConflictingPrivateProperties.ts, 33, 14))
+
+    const { a } = x; // Error
+>a : Symbol(a, Decl(intersectionWithConflictingPrivateProperties.ts, 34, 11))
+>x : Symbol(x, Decl(intersectionWithConflictingPrivateProperties.ts, 31, 38))
+}
+
+// Class expressions declare private members too
+const CE = class {
+>CE : Symbol(CE, Decl(intersectionWithConflictingPrivateProperties.ts, 38, 5))
+
+    private a = 1;
+>a : Symbol(CE.a, Decl(intersectionWithConflictingPrivateProperties.ts, 38, 18))
+
+};
+type T8 = (InstanceType<typeof CE> & B)["a"]; // Error
+>T8 : Symbol(T8, Decl(intersectionWithConflictingPrivateProperties.ts, 40, 2))
+>InstanceType : Symbol(InstanceType, Decl(lib.es5.d.ts, --, --))
+>CE : Symbol(CE, Decl(intersectionWithConflictingPrivateProperties.ts, 38, 5))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+
+// Single-class private member access on a type parameter still reports TS4105
+type T9<T extends A> = T["a"]; // Error
+>T9 : Symbol(T9, Decl(intersectionWithConflictingPrivateProperties.ts, 41, 45))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 44, 8))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 44, 8))
+
+// Accesses to non-conflicting properties are unaffected
+class C {
+>C : Symbol(C, Decl(intersectionWithConflictingPrivateProperties.ts, 44, 30))
+
+    private a = 1;
+>a : Symbol(C.a, Decl(intersectionWithConflictingPrivateProperties.ts, 47, 9))
+
+    public c = "c";
+>c : Symbol(C.c, Decl(intersectionWithConflictingPrivateProperties.ts, 48, 18))
+}
+
+class D {
+>D : Symbol(D, Decl(intersectionWithConflictingPrivateProperties.ts, 50, 1))
+
+    private a = 2;
+>a : Symbol(D.a, Decl(intersectionWithConflictingPrivateProperties.ts, 52, 9))
+
+    public d = "d";
+>d : Symbol(D.d, Decl(intersectionWithConflictingPrivateProperties.ts, 53, 18))
+}
+
+type T10 = (C & D)["c"]; // Ok
+>T10 : Symbol(T10, Decl(intersectionWithConflictingPrivateProperties.ts, 55, 1))
+>C : Symbol(C, Decl(intersectionWithConflictingPrivateProperties.ts, 44, 30))
+>D : Symbol(D, Decl(intersectionWithConflictingPrivateProperties.ts, 50, 1))
+
+type T11<T extends C, U extends D> = (T & U)["d"]; // Ok
+>T11 : Symbol(T11, Decl(intersectionWithConflictingPrivateProperties.ts, 57, 24))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 58, 9))
+>C : Symbol(C, Decl(intersectionWithConflictingPrivateProperties.ts, 44, 30))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 58, 21))
+>D : Symbol(D, Decl(intersectionWithConflictingPrivateProperties.ts, 50, 1))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 58, 9))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 58, 21))
+
+type T12<T extends C & D> = T["c"]; // Ok
+>T12 : Symbol(T12, Decl(intersectionWithConflictingPrivateProperties.ts, 58, 50))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 59, 9))
+>C : Symbol(C, Decl(intersectionWithConflictingPrivateProperties.ts, 44, 30))
+>D : Symbol(D, Decl(intersectionWithConflictingPrivateProperties.ts, 50, 1))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 59, 9))
+
+function f2<T extends C, U extends D>(x: T & U) {
+>f2 : Symbol(f2, Decl(intersectionWithConflictingPrivateProperties.ts, 59, 35))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 61, 12))
+>C : Symbol(C, Decl(intersectionWithConflictingPrivateProperties.ts, 44, 30))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 61, 24))
+>D : Symbol(D, Decl(intersectionWithConflictingPrivateProperties.ts, 50, 1))
+>x : Symbol(x, Decl(intersectionWithConflictingPrivateProperties.ts, 61, 38))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 61, 12))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 61, 24))
+
+    const v2 = x["c"]; // Ok
+>v2 : Symbol(v2, Decl(intersectionWithConflictingPrivateProperties.ts, 62, 9))
+>x : Symbol(x, Decl(intersectionWithConflictingPrivateProperties.ts, 61, 38))
+
+    const v3 = x["d"]; // Ok
+>v3 : Symbol(v3, Decl(intersectionWithConflictingPrivateProperties.ts, 63, 9))
+>x : Symbol(x, Decl(intersectionWithConflictingPrivateProperties.ts, 61, 38))
+
+    const { c } = x; // Ok
+>c : Symbol(c, Decl(intersectionWithConflictingPrivateProperties.ts, 64, 11))
+>x : Symbol(x, Decl(intersectionWithConflictingPrivateProperties.ts, 61, 38))
+}
+
+// Generic index types are unaffected
+type T13<T extends A, U extends B> = (T & U)[keyof (T & U)]; // Ok
+>T13 : Symbol(T13, Decl(intersectionWithConflictingPrivateProperties.ts, 65, 1))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 68, 9))
+>A : Symbol(A, Decl(intersectionWithConflictingPrivateProperties.ts, 0, 0))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 68, 21))
+>B : Symbol(B, Decl(intersectionWithConflictingPrivateProperties.ts, 6, 1))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 68, 9))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 68, 21))
+>T : Symbol(T, Decl(intersectionWithConflictingPrivateProperties.ts, 68, 9))
+>U : Symbol(U, Decl(intersectionWithConflictingPrivateProperties.ts, 68, 21))
+

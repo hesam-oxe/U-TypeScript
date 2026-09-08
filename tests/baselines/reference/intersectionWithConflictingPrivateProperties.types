@@ -1,0 +1,224 @@
+//// [tests/cases/conformance/types/intersection/intersectionWithConflictingPrivateProperties.ts] ////
+
+=== intersectionWithConflictingPrivateProperties.ts ===
+// An intersection of types that declare same-named private properties originating from
+// different classes is reduced to `never`. Indexed accesses for such a property must
+// report an error instead of silently resolving to `never` (see #62294).
+
+class A {
+>A : A
+>  : ^
+
+    private a = { foo: 1 };
+>a : { foo: number; }
+>  : ^^^^^^^^^^^^^^^^
+>{ foo: 1 } : { foo: number; }
+>           : ^^^^^^^^^^^^^^^^
+>foo : number
+>    : ^^^^^^
+>1 : 1
+>  : ^
+}
+
+class B {
+>B : B
+>  : ^
+
+    private a = { bar: "bar" };
+>a : { bar: string; }
+>  : ^^^^^^^^^^^^^^^^
+>{ bar: "bar" } : { bar: string; }
+>               : ^^^^^^^^^^^^^^^^
+>bar : string
+>    : ^^^^^^
+>"bar" : "bar"
+>      : ^^^^^
+}
+
+// Direct non-generic intersection
+type T1 = (A & B)["a"]; // Error
+>T1 : any
+>   : ^^^
+
+type T2 = (A & B)["missing"]; // Ok, indexing `never` is permissive
+>T2 : never
+>   : ^^^^^
+
+// Generic intersection
+type T3<T extends A, U extends B> = (T & U)["a"]; // Error
+>T3 : any
+>   : ^^^
+
+// Type parameter constrained by an intersection
+type T4<T extends A & B> = T["a"]; // Error
+>T4 : T4<T>
+>   : ^^^^^
+
+type T5<T extends A & B> = T["a"]["b"]["c"]["d"]; // Error
+>T5 : T5<T>
+>   : ^^^^^
+
+// Accessed through an alias
+type AB = A & B;
+>AB : never
+>   : ^^^^^
+
+type T6 = AB["a"]; // Error
+>T6 : any
+>   : ^^^
+
+// Nested in a conditional type
+type T7<T extends A, U extends B> = T extends never ? never : (T & U)["a"]; // Error
+>T7 : T7<T, U>
+>   : ^^^^^^^^
+
+// Element access in expression position
+function f1<T extends A, U extends B>(x: T & U) {
+>f1 : <T extends A, U extends B>(x: T & U) => void
+>   : ^ ^^^^^^^^^ ^^ ^^^^^^^^^ ^^ ^^     ^^^^^^^^^
+>x : never
+>  : ^^^^^
+
+    const v1 = x["a"]; // Error
+>v1 : any
+>   : ^^^
+>x["a"] : any
+>       : ^^^
+>x : never
+>  : ^^^^^
+>"a" : "a"
+>    : ^^^
+
+    x["a"] = { foo: 1 }; // Error
+>x["a"] = { foo: 1 } : { foo: number; }
+>                    : ^^^^^^^^^^^^^^^^
+>x["a"] : any
+>       : ^^^
+>x : never
+>  : ^^^^^
+>"a" : "a"
+>    : ^^^
+>{ foo: 1 } : { foo: number; }
+>           : ^^^^^^^^^^^^^^^^
+>foo : number
+>    : ^^^^^^
+>1 : 1
+>  : ^
+
+    const { a } = x; // Error
+>a : any
+>  : ^^^
+>x : never
+>  : ^^^^^
+}
+
+// Class expressions declare private members too
+const CE = class {
+>CE : typeof CE
+>   : ^^^^^^^^^
+>class {    private a = 1;} : typeof CE
+>                           : ^^^^^^^^^
+
+    private a = 1;
+>a : number
+>  : ^^^^^^
+>1 : 1
+>  : ^
+
+};
+type T8 = (InstanceType<typeof CE> & B)["a"]; // Error
+>T8 : any
+>   : ^^^
+>CE : typeof CE
+>   : ^^^^^^^^^
+
+// Single-class private member access on a type parameter still reports TS4105
+type T9<T extends A> = T["a"]; // Error
+>T9 : T9<T>
+>   : ^^^^^
+
+// Accesses to non-conflicting properties are unaffected
+class C {
+>C : C
+>  : ^
+
+    private a = 1;
+>a : number
+>  : ^^^^^^
+>1 : 1
+>  : ^
+
+    public c = "c";
+>c : string
+>  : ^^^^^^
+>"c" : "c"
+>    : ^^^
+}
+
+class D {
+>D : D
+>  : ^
+
+    private a = 2;
+>a : number
+>  : ^^^^^^
+>2 : 2
+>  : ^
+
+    public d = "d";
+>d : string
+>  : ^^^^^^
+>"d" : "d"
+>    : ^^^
+}
+
+type T10 = (C & D)["c"]; // Ok
+>T10 : never
+>    : ^^^^^
+
+type T11<T extends C, U extends D> = (T & U)["d"]; // Ok
+>T11 : never
+>    : ^^^^^
+
+type T12<T extends C & D> = T["c"]; // Ok
+>T12 : T12<T>
+>    : ^^^^^^
+
+function f2<T extends C, U extends D>(x: T & U) {
+>f2 : <T extends C, U extends D>(x: T & U) => void
+>   : ^ ^^^^^^^^^ ^^ ^^^^^^^^^ ^^ ^^     ^^^^^^^^^
+>x : never
+>  : ^^^^^
+
+    const v2 = x["c"]; // Ok
+>v2 : never
+>   : ^^^^^
+>x["c"] : never
+>       : ^^^^^
+>x : never
+>  : ^^^^^
+>"c" : "c"
+>    : ^^^
+
+    const v3 = x["d"]; // Ok
+>v3 : never
+>   : ^^^^^
+>x["d"] : never
+>       : ^^^^^
+>x : never
+>  : ^^^^^
+>"d" : "d"
+>    : ^^^
+
+    const { c } = x; // Ok
+>c : never
+>  : ^^^^^
+>x : never
+>  : ^^^^^
+}
+
+// Generic index types are unaffected
+type T13<T extends A, U extends B> = (T & U)[keyof (T & U)]; // Ok
+>T13 : never
+>    : ^^^^^
+
