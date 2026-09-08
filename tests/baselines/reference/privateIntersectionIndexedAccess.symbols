@@ -1,0 +1,122 @@
+//// [tests/cases/compiler/privateIntersectionIndexedAccess.ts] ////
+
+=== privateIntersectionIndexedAccess.ts ===
+// Indexed access with the name of a property that is private in more than one constituent
+// of an intersection should report a private access error, mirroring the error reported
+// for the equivalent dot access.
+
+class A {
+>A : Symbol(A, Decl(privateIntersectionIndexedAccess.ts, 0, 0))
+
+    private x = 1;
+>x : Symbol(A.x, Decl(privateIntersectionIndexedAccess.ts, 4, 9))
+
+    public y = 1;
+>y : Symbol(A.y, Decl(privateIntersectionIndexedAccess.ts, 5, 18))
+}
+
+class B {
+>B : Symbol(B, Decl(privateIntersectionIndexedAccess.ts, 7, 1))
+
+    private x = 1;
+>x : Symbol(B.x, Decl(privateIntersectionIndexedAccess.ts, 9, 9))
+}
+
+declare const ab: A & B;
+>ab : Symbol(ab, Decl(privateIntersectionIndexedAccess.ts, 13, 13))
+>A : Symbol(A, Decl(privateIntersectionIndexedAccess.ts, 0, 0))
+>B : Symbol(B, Decl(privateIntersectionIndexedAccess.ts, 7, 1))
+
+const dotAccess = ab.x;
+>dotAccess : Symbol(dotAccess, Decl(privateIntersectionIndexedAccess.ts, 14, 5))
+>ab : Symbol(ab, Decl(privateIntersectionIndexedAccess.ts, 13, 13))
+
+const bracketAccess = ab["x"];
+>bracketAccess : Symbol(bracketAccess, Decl(privateIntersectionIndexedAccess.ts, 15, 5))
+>ab : Symbol(ab, Decl(privateIntersectionIndexedAccess.ts, 13, 13))
+
+const unrelatedKey = ab["y"];
+>unrelatedKey : Symbol(unrelatedKey, Decl(privateIntersectionIndexedAccess.ts, 16, 5))
+>ab : Symbol(ab, Decl(privateIntersectionIndexedAccess.ts, 13, 13))
+
+function f<T extends A, U extends B>(tu: T & U) {
+>f : Symbol(f, Decl(privateIntersectionIndexedAccess.ts, 16, 29))
+>T : Symbol(T, Decl(privateIntersectionIndexedAccess.ts, 18, 11))
+>A : Symbol(A, Decl(privateIntersectionIndexedAccess.ts, 0, 0))
+>U : Symbol(U, Decl(privateIntersectionIndexedAccess.ts, 18, 23))
+>B : Symbol(B, Decl(privateIntersectionIndexedAccess.ts, 7, 1))
+>tu : Symbol(tu, Decl(privateIntersectionIndexedAccess.ts, 18, 37))
+>T : Symbol(T, Decl(privateIntersectionIndexedAccess.ts, 18, 11))
+>U : Symbol(U, Decl(privateIntersectionIndexedAccess.ts, 18, 23))
+
+    const genericDot = tu.x;
+>genericDot : Symbol(genericDot, Decl(privateIntersectionIndexedAccess.ts, 19, 9))
+>tu : Symbol(tu, Decl(privateIntersectionIndexedAccess.ts, 18, 37))
+
+    const genericBracket = tu["x"];
+>genericBracket : Symbol(genericBracket, Decl(privateIntersectionIndexedAccess.ts, 20, 9))
+>tu : Symbol(tu, Decl(privateIntersectionIndexedAccess.ts, 18, 37))
+
+    const genericUnrelated = tu["y"];
+>genericUnrelated : Symbol(genericUnrelated, Decl(privateIntersectionIndexedAccess.ts, 21, 9))
+>tu : Symbol(tu, Decl(privateIntersectionIndexedAccess.ts, 18, 37))
+}
+
+type I = A & B;
+>I : Symbol(I, Decl(privateIntersectionIndexedAccess.ts, 22, 1))
+>A : Symbol(A, Decl(privateIntersectionIndexedAccess.ts, 0, 0))
+>B : Symbol(B, Decl(privateIntersectionIndexedAccess.ts, 7, 1))
+
+type IndexedPrivate = I["x"];
+>IndexedPrivate : Symbol(IndexedPrivate, Decl(privateIntersectionIndexedAccess.ts, 24, 15))
+>I : Symbol(I, Decl(privateIntersectionIndexedAccess.ts, 22, 1))
+
+type IndexedPublic = I["y"];
+>IndexedPublic : Symbol(IndexedPublic, Decl(privateIntersectionIndexedAccess.ts, 25, 29))
+>I : Symbol(I, Decl(privateIntersectionIndexedAccess.ts, 22, 1))
+
+// The error is reported regardless of enclosing class, since the intersection itself
+// is uninhabitable (dot access reports an equivalent error).
+class C {
+>C : Symbol(C, Decl(privateIntersectionIndexedAccess.ts, 26, 28))
+
+    private x = 1;
+>x : Symbol(C.x, Decl(privateIntersectionIndexedAccess.ts, 30, 9))
+
+    m(ca: C & B) {
+>m : Symbol(C.m, Decl(privateIntersectionIndexedAccess.ts, 31, 18))
+>ca : Symbol(ca, Decl(privateIntersectionIndexedAccess.ts, 32, 6))
+>C : Symbol(C, Decl(privateIntersectionIndexedAccess.ts, 26, 28))
+>B : Symbol(B, Decl(privateIntersectionIndexedAccess.ts, 7, 1))
+
+        return ca["x"];
+>ca : Symbol(ca, Decl(privateIntersectionIndexedAccess.ts, 32, 6))
+    }
+}
+
+// A property that is private in one constituent and public in another still conflicts.
+class D {
+>D : Symbol(D, Decl(privateIntersectionIndexedAccess.ts, 35, 1))
+
+    private x = 1;
+>x : Symbol(D.x, Decl(privateIntersectionIndexedAccess.ts, 38, 9))
+}
+class E {
+>E : Symbol(E, Decl(privateIntersectionIndexedAccess.ts, 40, 1))
+
+    x = 2;
+>x : Symbol(E.x, Decl(privateIntersectionIndexedAccess.ts, 41, 9))
+}
+declare const de: D & E;
+>de : Symbol(de, Decl(privateIntersectionIndexedAccess.ts, 44, 13))
+>D : Symbol(D, Decl(privateIntersectionIndexedAccess.ts, 35, 1))
+>E : Symbol(E, Decl(privateIntersectionIndexedAccess.ts, 40, 1))
+
+const mixedBracket = de["x"];
+>mixedBracket : Symbol(mixedBracket, Decl(privateIntersectionIndexedAccess.ts, 45, 5))
+>de : Symbol(de, Decl(privateIntersectionIndexedAccess.ts, 44, 13))
+
+const mixedDot = de.x;
+>mixedDot : Symbol(mixedDot, Decl(privateIntersectionIndexedAccess.ts, 46, 5))
+>de : Symbol(de, Decl(privateIntersectionIndexedAccess.ts, 44, 13))
+

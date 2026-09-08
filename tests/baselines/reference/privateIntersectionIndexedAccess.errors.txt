@@ -1,0 +1,81 @@
+privateIntersectionIndexedAccess.ts(15,22): error TS2339: Property 'x' does not exist on type 'never'.
+  The intersection 'A & B' was reduced to 'never' because property 'x' exists in multiple constituents and is private in some.
+privateIntersectionIndexedAccess.ts(16,23): error TS2341: Property 'x' is private and only accessible within class 'A'.
+privateIntersectionIndexedAccess.ts(20,27): error TS2339: Property 'x' does not exist on type 'never'.
+  The intersection 'T & U' was reduced to 'never' because property 'x' exists in multiple constituents and is private in some.
+privateIntersectionIndexedAccess.ts(21,28): error TS2341: Property 'x' is private and only accessible within class 'A'.
+privateIntersectionIndexedAccess.ts(26,23): error TS2341: Property 'x' is private and only accessible within class 'A'.
+privateIntersectionIndexedAccess.ts(34,16): error TS2341: Property 'x' is private and only accessible within class 'C'.
+privateIntersectionIndexedAccess.ts(46,22): error TS2341: Property 'x' is private and only accessible within class 'D'.
+privateIntersectionIndexedAccess.ts(47,21): error TS2339: Property 'x' does not exist on type 'never'.
+  The intersection 'D & E' was reduced to 'never' because property 'x' exists in multiple constituents and is private in some.
+
+
+==== privateIntersectionIndexedAccess.ts (8 errors) ====
+    // Indexed access with the name of a property that is private in more than one constituent
+    // of an intersection should report a private access error, mirroring the error reported
+    // for the equivalent dot access.
+    
+    class A {
+        private x = 1;
+        public y = 1;
+    }
+    
+    class B {
+        private x = 1;
+    }
+    
+    declare const ab: A & B;
+    const dotAccess = ab.x;
+                         ~
+!!! error TS2339: Property 'x' does not exist on type 'never'.
+!!! error TS2339:   The intersection 'A & B' was reduced to 'never' because property 'x' exists in multiple constituents and is private in some.
+    const bracketAccess = ab["x"];
+                          ~~~~~~~
+!!! error TS2341: Property 'x' is private and only accessible within class 'A'.
+    const unrelatedKey = ab["y"];
+    
+    function f<T extends A, U extends B>(tu: T & U) {
+        const genericDot = tu.x;
+                              ~
+!!! error TS2339: Property 'x' does not exist on type 'never'.
+!!! error TS2339:   The intersection 'T & U' was reduced to 'never' because property 'x' exists in multiple constituents and is private in some.
+        const genericBracket = tu["x"];
+                               ~~~~~~~
+!!! error TS2341: Property 'x' is private and only accessible within class 'A'.
+        const genericUnrelated = tu["y"];
+    }
+    
+    type I = A & B;
+    type IndexedPrivate = I["x"];
+                          ~~~~~~
+!!! error TS2341: Property 'x' is private and only accessible within class 'A'.
+    type IndexedPublic = I["y"];
+    
+    // The error is reported regardless of enclosing class, since the intersection itself
+    // is uninhabitable (dot access reports an equivalent error).
+    class C {
+        private x = 1;
+        m(ca: C & B) {
+            return ca["x"];
+                   ~~~~~~~
+!!! error TS2341: Property 'x' is private and only accessible within class 'C'.
+        }
+    }
+    
+    // A property that is private in one constituent and public in another still conflicts.
+    class D {
+        private x = 1;
+    }
+    class E {
+        x = 2;
+    }
+    declare const de: D & E;
+    const mixedBracket = de["x"];
+                         ~~~~~~~
+!!! error TS2341: Property 'x' is private and only accessible within class 'D'.
+    const mixedDot = de.x;
+                        ~
+!!! error TS2339: Property 'x' does not exist on type 'never'.
+!!! error TS2339:   The intersection 'D & E' was reduced to 'never' because property 'x' exists in multiple constituents and is private in some.
+    

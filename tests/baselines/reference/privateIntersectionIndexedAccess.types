@@ -1,0 +1,191 @@
+//// [tests/cases/compiler/privateIntersectionIndexedAccess.ts] ////
+
+=== privateIntersectionIndexedAccess.ts ===
+// Indexed access with the name of a property that is private in more than one constituent
+// of an intersection should report a private access error, mirroring the error reported
+// for the equivalent dot access.
+
+class A {
+>A : A
+>  : ^
+
+    private x = 1;
+>x : number
+>  : ^^^^^^
+>1 : 1
+>  : ^
+
+    public y = 1;
+>y : number
+>  : ^^^^^^
+>1 : 1
+>  : ^
+}
+
+class B {
+>B : B
+>  : ^
+
+    private x = 1;
+>x : number
+>  : ^^^^^^
+>1 : 1
+>  : ^
+}
+
+declare const ab: A & B;
+>ab : never
+>   : ^^^^^
+
+const dotAccess = ab.x;
+>dotAccess : any
+>          : ^^^
+>ab.x : any
+>     : ^^^
+>ab : never
+>   : ^^^^^
+>x : any
+>  : ^^^
+
+const bracketAccess = ab["x"];
+>bracketAccess : any
+>              : ^^^
+>ab["x"] : any
+>        : ^^^
+>ab : never
+>   : ^^^^^
+>"x" : "x"
+>    : ^^^
+
+const unrelatedKey = ab["y"];
+>unrelatedKey : never
+>             : ^^^^^
+>ab["y"] : never
+>        : ^^^^^
+>ab : never
+>   : ^^^^^
+>"y" : "y"
+>    : ^^^
+
+function f<T extends A, U extends B>(tu: T & U) {
+>f : <T extends A, U extends B>(tu: T & U) => void
+>  : ^ ^^^^^^^^^ ^^ ^^^^^^^^^ ^^  ^^     ^^^^^^^^^
+>tu : never
+>   : ^^^^^
+
+    const genericDot = tu.x;
+>genericDot : any
+>           : ^^^
+>tu.x : any
+>     : ^^^
+>tu : never
+>   : ^^^^^
+>x : any
+>  : ^^^
+
+    const genericBracket = tu["x"];
+>genericBracket : any
+>               : ^^^
+>tu["x"] : any
+>        : ^^^
+>tu : never
+>   : ^^^^^
+>"x" : "x"
+>    : ^^^
+
+    const genericUnrelated = tu["y"];
+>genericUnrelated : never
+>                 : ^^^^^
+>tu["y"] : never
+>        : ^^^^^
+>tu : never
+>   : ^^^^^
+>"y" : "y"
+>    : ^^^
+}
+
+type I = A & B;
+>I : never
+>  : ^^^^^
+
+type IndexedPrivate = I["x"];
+>IndexedPrivate : any
+>               : ^^^
+
+type IndexedPublic = I["y"];
+>IndexedPublic : never
+>              : ^^^^^
+
+// The error is reported regardless of enclosing class, since the intersection itself
+// is uninhabitable (dot access reports an equivalent error).
+class C {
+>C : C
+>  : ^
+
+    private x = 1;
+>x : number
+>  : ^^^^^^
+>1 : 1
+>  : ^
+
+    m(ca: C & B) {
+>m : (ca: C & B) => any
+>  : ^  ^^     ^^^^^^^^
+>ca : never
+>   : ^^^^^
+
+        return ca["x"];
+>ca["x"] : any
+>        : ^^^
+>ca : never
+>   : ^^^^^
+>"x" : "x"
+>    : ^^^
+    }
+}
+
+// A property that is private in one constituent and public in another still conflicts.
+class D {
+>D : D
+>  : ^
+
+    private x = 1;
+>x : number
+>  : ^^^^^^
+>1 : 1
+>  : ^
+}
+class E {
+>E : E
+>  : ^
+
+    x = 2;
+>x : number
+>  : ^^^^^^
+>2 : 2
+>  : ^
+}
+declare const de: D & E;
+>de : never
+>   : ^^^^^
+
+const mixedBracket = de["x"];
+>mixedBracket : any
+>             : ^^^
+>de["x"] : any
+>        : ^^^
+>de : never
+>   : ^^^^^
+>"x" : "x"
+>    : ^^^
+
+const mixedDot = de.x;
+>mixedDot : any
+>         : ^^^
+>de.x : any
+>     : ^^^
+>de : never
+>   : ^^^^^
+>x : any
+>  : ^^^
+
