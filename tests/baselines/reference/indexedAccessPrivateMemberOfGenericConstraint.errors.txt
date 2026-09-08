@@ -3,9 +3,10 @@ indexedAccessPrivateMemberOfGenericConstraint.ts(6,11): error TS2564: Property '
 indexedAccessPrivateMemberOfGenericConstraint.ts(9,24): error TS4105: Private or protected member 'a' cannot be accessed on a type parameter.
 indexedAccessPrivateMemberOfGenericConstraint.ts(9,32): error TS4105: Private or protected member 'a' cannot be accessed on a type parameter.
 indexedAccessPrivateMemberOfGenericConstraint.ts(10,27): error TS4105: Private or protected member 'a' cannot be accessed on a type parameter.
+indexedAccessPrivateMemberOfGenericConstraint.ts(11,27): error TS2341: Property 'a' is private and only accessible within class 'A'.
 
 
-==== indexedAccessPrivateMemberOfGenericConstraint.ts (5 errors) ====
+==== indexedAccessPrivateMemberOfGenericConstraint.ts (6 errors) ====
     class A {
       private a: number;
               ~
@@ -27,4 +28,6 @@ indexedAccessPrivateMemberOfGenericConstraint.ts(10,27): error TS4105: Private o
                               ~~~~~~
 !!! error TS4105: Private or protected member 'a' cannot be accessed on a type parameter.
     type Z<T extends A & B> = T["a"];
+                              ~~~~~~
+!!! error TS2341: Property 'a' is private and only accessible within class 'A'.
     
