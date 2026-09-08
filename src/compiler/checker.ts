@@ -15852,6 +15852,26 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
     }
 
     /**
+     * If the given intersection type contains a same-named private property originating from different classes
+     * (the reason the intersection is reduced to `never`), and the given name denotes that property, report an
+     * error on the given node for the otherwise silently inaccessible property and return true.
+     */
+    function checkConflictingPrivatePropertyAccess(intersection: IntersectionType, propName: __String, accessNode: Node): boolean {
+        const prop = find(getPropertiesOfUnionOrIntersectionType(intersection), p => p.escapedName === propName && isConflictingPrivateProperty(p));
+        if (prop) {
+            const declaringClass = forEachProperty(prop, p => getDeclarationModifierFlagsFromSymbol(p) & ModifierFlags.Private ? getDeclaringClass(p) : undefined);
+            if (declaringClass) {
+                error(accessNode, Diagnostics.Property_0_is_private_and_only_accessible_within_class_1, symbolToString(prop), typeToString(declaringClass));
+            }
+            else {
+                error(accessNode, Diagnostics.Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter, unescapeLeadingUnderscores(prop.escapedName));
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * A union type which is reducible upon instantiation (meaning some members are removed under certain instantiations)
      * must be kept generic, as that instantiation information needs to flow through the type system. By replacing all
      * type parameters in the union with a special never type that is treated as a literal in `getReducedType`, we can cause
@@ -19655,23 +19675,18 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
         if (objectType === wildcardType || indexType === wildcardType) {
             return wildcardType;
         }
-        objectType = getReducedType(objectType);
-        // If the object type is an intersection with conflicting private properties,
-        // report an error — we shouldn't be able to access those properties via T["key"]
-        if (objectType.flags & TypeFlags.Intersection && !(objectType.flags & TypeFlags.Never)) {
-            const props = getPropertiesOfUnionOrIntersectionType(objectType as IntersectionType);
-            const conflictingPrivate = find(props, isConflictingPrivateProperty);
-            if (conflictingPrivate) {
-                if (accessNode) {
-                    const declaringClass = getDeclaringClass(conflictingPrivate);
-                    if (declaringClass) {
-                        error(accessNode, Diagnostics.Property_0_is_private_and_only_accessible_within_class_1,
-                              symbolToString(conflictingPrivate), typeToString(declaringClass));
-                    }
-                }
-                return undefined;
+        // If the object type is an intersection that will be reduced to `never` because it contains same-named
+        // private properties originating from different classes, an indexed access for one of those properties
+        // would otherwise silently resolve to `never` without reporting any error (the reduction below discards
+        // the intersection along with its properties, and indexing `never` never fails). We therefore check for
+        // this condition up front, while the intersection and the property symbols are still available.
+        if (objectType.flags & TypeFlags.Intersection && accessNode && indexType.flags & TypeFlags.StringOrNumberLiteral) {
+            const propName = getPropertyNameFromType(indexType as StringLiteralType | NumberLiteralType);
+            if (checkConflictingPrivatePropertyAccess(objectType as IntersectionType, propName, accessNode)) {
+                return errorType;
             }
         }
+        objectType = getReducedType(objectType);
         // If the object type has a string index signature and no other members we know that the result will
         // always be the type of that index signature and we can simplify accordingly.
         if (isStringIndexSignatureOnlyType(objectType) && !(indexType.flags & TypeFlags.Nullable) && isTypeAssignableToKind(indexType, TypeFlags.String | TypeFlags.Number)) {
@@ -42942,6 +42957,19 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
         const objectType = (type as IndexedAccessType).objectType;
         const indexType = (type as IndexedAccessType).indexType;
         const hasNumberIndexInfo = !!getIndexInfoOfType(objectType, numberType);
+        // If the object type is a type parameter whose constraint is an intersection that is reduced to `never`
+        // because it contains same-named private properties originating from different classes, and the index type
+        // is a literal naming one of those properties, the key assignability check below will succeed (the reduced
+        // constraint is `never`, whose `keyof` is `string | number | symbol`), so we check for the condition here.
+        if (objectType.flags & TypeFlags.TypeParameter && indexType.flags & TypeFlags.StringOrNumberLiteral) {
+            const constraint = getConstraintOfTypeParameter(objectType as TypeParameter);
+            if (constraint && constraint.flags & TypeFlags.Intersection) {
+                const propName = getPropertyNameFromType(indexType as StringLiteralType | NumberLiteralType);
+                if (checkConflictingPrivatePropertyAccess(constraint as IntersectionType, propName, accessNode)) {
+                    return errorType;
+                }
+            }
+        }
         if (everyType(indexType, t => isTypeAssignableTo(t, getIndexType(objectType, IndexFlags.None)) || hasNumberIndexInfo && isApplicableIndexType(t, numberType))) {
             if (
                 accessNode.kind === SyntaxKind.ElementAccessExpression && isAssignmentTarget(accessNode) &&
