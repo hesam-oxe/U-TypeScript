@@ -12,7 +12,9 @@ on:
   schedule:
     - cron: '19 15 * * 4'
   push:
-    branches: ['main']
+    # Scorecard supports only the default branch; this mirror/sync branch
+    # receives frequent upstream sync pushes, so run here instead.
+    branches: ['fix/critical-bugs-and-stabilization']
 
 # Declare default permissions as read only.
 permissions: read-all
