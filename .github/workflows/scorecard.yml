@@ -19,6 +19,10 @@ permissions: read-all
 
 jobs:
   analysis:
+    # Scorecard only analyzes the default branch; on a push to any other
+    # branch (e.g. main while a fix branch is default) the job must skip
+    # instead of failing.
+    if: github.event_name != 'push' || github.ref_name == github.event.repository.default_branch
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
