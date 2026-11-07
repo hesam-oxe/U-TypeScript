@@ -136,6 +136,9 @@ jobs:
   coverage:
     if: ${{ github.event_name != 'merge_group' }}
 
+    # Guard against a hung test process occupying a self-hosted runner for a full day.
+    timeout-minutes: 120
+
     runs-on:
       - 'self-hosted'
       - '1ES.Pool=TypeScript-1ES-GitHub-Large'
@@ -153,7 +156,10 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: 'lts/*'
+          # Pin to Node 24: lts/* now resolves to Node 26, where mocha's nested
+          # yargs crashes ("require is not defined in ES module scope") and the
+          # coverage run hangs until the runner timeout.
+          node-version: '24'
       - run: npm ci
 
       - name: Run tests with coverage
@@ -359,7 +365,9 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: 'lts/*'
+          # Pin to Node 24: lts/* now resolves to Node 26, where mocha's nested
+          # yargs crashes ("require is not defined in ES module scope").
+          node-version: '24'
       - run: npm ci
 
       - name: Build scripts
