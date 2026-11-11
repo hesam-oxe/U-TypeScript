@@ -134,7 +134,9 @@ jobs:
           git diff --staged --exit-code
 
   coverage:
-    if: ${{ github.event_name != 'merge_group' }}
+    # The 1ES self-hosted pool only exists in microsoft/TypeScript; on forks
+    # these jobs would sit in queue until the 24h runner-assignment timeout.
+    if: ${{ github.event_name != 'merge_group' && github.repository == 'microsoft/TypeScript' }}
 
     # Guard against a hung test process occupying a self-hosted runner for a full day.
     timeout-minutes: 120
